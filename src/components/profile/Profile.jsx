@@ -7,6 +7,7 @@ import ProfilePosts from './profileComponents/ProfilePosts';
 import { useImmer } from 'use-immer';
 import DispatchContext from '../context/DispatchContext';
 import ProfileFollow from './profileComponents/ProfileFollow';
+import PageNotFound from '../errorPages/PageNotFound';
 
 function UserProfile() {
 	const appState = useContext(StateContext);
@@ -24,7 +25,8 @@ function UserProfile() {
 				postCount: 0,
 				followerCount: 0,
 				followingCount: 0
-			}
+			},
+			isPageFound: true
 		}
 	});
 
@@ -40,7 +42,12 @@ function UserProfile() {
 						{ token: appState.user.token },
 						{ cancelToken: userProfileReq.token }
 					);
-
+					console.log(res.data);
+					if (!res.data) {
+						setProfileState(draft => {
+							draft.isPageFound = false;
+						});
+					}
 					setProfileState(draft => {
 						draft.profileData = res.data;
 					});
@@ -105,6 +112,7 @@ function UserProfile() {
 			draft.stopFollowingReqCount++;
 		});
 	}
+
 	// use effect to stop following an account
 	// watch the counter for stopFollowingReqCount
 	useEffect(
@@ -144,6 +152,8 @@ function UserProfile() {
 		},
 		[ profileState.stopFollowingReqCount ]
 	);
+
+	if (!profileState.isPageFound) return <PageNotFound />;
 
 	return (
 		<Page title={`Profile of ${profileState.profileData.profileUsername}`}>
