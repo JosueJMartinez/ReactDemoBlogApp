@@ -67,7 +67,8 @@ function EditPost(props) {
 				draft.body.hasErrors = false;
 				return;
 			case 'saveChanges':
-				if (!draft.title.hasErrors && !draft.body.hasErrors) draft.sendCount++;
+				if (!draft.title.hasErrors && !draft.body.hasErrors)
+					draft.sendCount++;
 				return;
 			case 'saveReqStarted':
 				draft.isSaving = true;
@@ -100,7 +101,9 @@ function EditPost(props) {
 
 		const fetchPost = async () => {
 			try {
-				const resp = await Axios.get(`/post/${state.id}`, { cancelToken: ourReq.token });
+				const resp = await Axios.get(`/post/${state.id}`, {
+					cancelToken: ourReq.token
+				});
 				if (resp.data) {
 					dispatch({ type: 'fetchComplete', value: resp.data });
 				} else {
@@ -127,12 +130,20 @@ function EditPost(props) {
 					try {
 						const res = await Axios.post(
 							`/post/${state.id}/edit`,
-							{ title: state.title.value, body: state.body.value, token: appState.user.token },
+							{
+								title: state.title.value,
+								body: state.body.value,
+								token: appState.user.token
+							},
 							{ cancelToken: ourReq.token }
 						);
 						dispatch({ type: 'saveReqFinished' });
-						appDispatch({ type: 'flashMessage', value: `Congratz your post ${state.title.value} has been saved` });
-						console.log(res);
+						appDispatch({
+							type: 'flashMessage',
+							value: `Congratz your post ${state.title
+								.value} has been saved`
+						});
+						props.history.push(`/post/${state.id}`);
 					} catch (err) {
 						console.log(err, state.sendCount);
 						console.log('there was a problem');
@@ -155,7 +166,10 @@ function EditPost(props) {
 		);
 
 	if (!state.isVisitorOwner) {
-		appDispatch({ type: 'flashMessage', value: 'You do not have permission to edit this post.' });
+		appDispatch({
+			type: 'flashMessage',
+			value: 'You do not have permission to edit this post.'
+		});
 		// redirect to home page
 		props.history.push(`/`);
 	}
@@ -180,16 +194,21 @@ function EditPost(props) {
 						autoFocus
 						name="title"
 						id="post-title"
-						className={`form-control form-control-lg form-control-title ${state.title.hasErrors && 'border-error'}`}
+						className={`form-control form-control-lg form-control-title ${state
+							.title.hasErrors && 'border-error'}`}
 						type="text"
 						placeholder=""
 						autoComplete="off"
 						value={state.title.value}
-						onChange={e => dispatch({ type: 'titleChange', value: e.target.value })}
-						onBlur={e => dispatch({ type: 'titleRules', value: e.target.value })}
+						onChange={e =>
+							dispatch({ type: 'titleChange', value: e.target.value })}
+						onBlur={e =>
+							dispatch({ type: 'titleRules', value: e.target.value })}
 					/>
 					{state.title.hasErrors && (
-						<div className="alert alert-danger small liveValidateMessage">{state.title.message}</div>
+						<div className="alert alert-danger small liveValidateMessage">
+							{state.title.message}
+						</div>
 					)}
 				</div>
 
@@ -200,18 +219,28 @@ function EditPost(props) {
 					<textarea
 						name="body"
 						id="post-body"
-						className={`body-content tall-textarea form-control ${state.body.hasErrors && 'border-error'}`}
+						className={`body-content tall-textarea form-control ${state
+							.body.hasErrors && 'border-error'}`}
 						type="text"
 						value={state.body.value}
-						onChange={e => dispatch({ type: 'bodyChange', value: e.target.value })}
-						onBlur={e => dispatch({ type: 'bodyRules', value: e.target.value })}
+						onChange={e =>
+							dispatch({ type: 'bodyChange', value: e.target.value })}
+						onBlur={e =>
+							dispatch({ type: 'bodyRules', value: e.target.value })}
 					/>
 					{state.body.hasErrors && (
-						<div className="alert alert-danger small liveValidateMessage">{state.body.message}</div>
+						<div className="alert alert-danger small liveValidateMessage">
+							{state.body.message}
+						</div>
 					)}
 				</div>
 
-				<button className="btn btn-primary" disabled={state.body.hasErrors || state.title.hasErrors || state.isSaving}>
+				<button
+					className="btn btn-primary"
+					disabled={
+						state.body.hasErrors || state.title.hasErrors || state.isSaving
+					}
+				>
 					{state.isSaving ? 'Saving...' : 'Save Update'}
 				</button>
 			</form>
