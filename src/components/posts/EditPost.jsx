@@ -32,8 +32,6 @@ function EditPost(props) {
 		notFound: false
 	};
 
-	const [ errors, setErrors ] = useState({ title: '', body: '' });
-
 	const [ state, dispatch ] = useImmerReducer(editPostReducer, initState);
 
 	//function to call save changes and prevent default
@@ -165,17 +163,16 @@ function EditPost(props) {
 			</Page>
 		);
 
-	if (!state.isVisitorOwner) {
-		appDispatch({
-			type: 'flashMessage',
-			value: 'You do not have permission to edit this post.'
-		});
-		// redirect to home page
-		props.history.push(`/`);
-	}
-
 	if (state.notFound) {
 		return <PageNotFound />;
+	}
+
+	if (!state.isVisitorOwner) {
+		appDispatch({
+			type: 'flashMessageError',
+			value: 'You do not have permission to edit this post.'
+		});
+		props.history.push(`/`);
 	}
 
 	return (
