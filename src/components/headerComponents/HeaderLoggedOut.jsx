@@ -1,45 +1,128 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useContext } from 'react';
 import Axios from 'axios';
 import DispatchContext from '../context/DispatchContext';
+import { useImmerReducer } from 'use-immer';
 import StateContext from '../context/StateContext';
 
 function HeaderLoggedOut(props) {
-	const [ user, setLogin ] = useState({ username: '', password: '' });
-	let [ loginError, setLoginError ] = useState('');
 	const appDispatch = useContext(DispatchContext);
 	const appState = useContext(StateContext);
-
-	const handleChange = e => {
-		setLoginError('');
-		const { name, value } = e.target;
-		setLogin(prevInput => {
-			return { ...prevInput, [name]: value };
-		});
+	const initState = {
+		username: {
+			value: '',
+			hasErrors: false,
+			message: ''
+		},
+		password: {
+			value: '',
+			hasErrors: false,
+			message: ''
+		},
+		submitCount: 0
 	};
+
+	function loginReducer(draft, action) {
+		switch (action.type) {
+			case 'usernameImmediately':
+				draft.username.hasErrors = false;
+				draft.username.value = action.value;
+				return;
+			case 'passwordImmediately':
+				draft.password.hasErrors = false;
+				draft.password.value = action.value;
+				return;
+			case 'usernameSubmit':
+				draft.username.value = action.value;
+				if (draft.username.value.trim().length === 0) {
+					draft.username.hasErrors = true;
+					draft.username.message = 'Username field is empty';
+				}
+				if (draft.username.value && /\W/g.test(draft.username.value)) {
+					draft.username.hasErrors = true;
+					draft.username.message = 'Only letters, numbers, or _';
+				}
+				return;
+			case 'setErrorsTrue':
+				draft.username.hasErrors = true;
+				draft.password.hasErrors = true;
+				return;
+			case 'passwordSubmit':
+				draft.password.value = action.value;
+				if (draft.password.value.trim().length === 0) {
+					draft.password.hasErrors = true;
+					draft.password.message = 'Password is missing';
+				}
+				return;
+			case 'submitLogin':
+				draft.submitCount++;
+				return;
+		}
+	}
+
+	const [ state, dispatch ] = useImmerReducer(loginReducer, initState);
 
 	const handleSubmit = async e => {
 		e.preventDefault();
-		try {
-			const res = await Axios.post('/login', user);
-			if (res.data) {
-				// localStorage.setItem('username', res.data.username);
-				// localStorage.setItem('avatar', res.data.avatar);
-				// localStorage.setItem('token', res.data.token);
-				appDispatch({ type: 'login', userData: res.data });
-				appDispatch({
-					type: 'flashMessage',
-					value: `Welcome back ${user.username}`
-				});
-			} else {
-				appDispatch({
-					type: 'flashMessageError',
-					value: 'Invalid username or password.'
-				});
-			}
-		} catch (e) {
-			console.log(e.response.data);
-		}
+		dispatch({ type: 'usernameSubmit', value: state.username.value });
+		dispatch({ type: 'passwordSubmit', value: state.password.value });
+		console.log(state);
+
+		dispatch({ type: 'submitLogin' });
 	};
+
+	useEffect(
+		() => {
+			if (state.submitCount) {
+				const cancelReq = Axios.CancelToken.source();
+				const submitData = async () => {
+					try {
+						const res = await Axios.post('/login', {
+							username: state.username.value,
+							password: state.password.value
+						});
+
+						if (res.data) {
+							appDispatch({ type: 'login', userData: res.data });
+							appDispatch({
+								type: 'flashMessage',
+								value: `Welcome back ${appState.user.username}`
+							});
+						} else {
+							dispatch({ type: 'setErrorsTrue' });
+							appDispatch({
+								type: 'flashMessageError',
+								value: 'Invalid username or password.'
+							});
+						}
+					} catch (e) {
+						console.log(e);
+					}
+				};
+
+				if (state.password.hasErrors && state.username.hasErrors)
+					appDispatch({
+						type: 'flashMessageError',
+						value: `${state.username.message} and ${state.password
+							.message}`
+					});
+				else if (state.password.hasErrors) {
+					appDispatch({
+						type: 'flashMessageError',
+						value: state.password.message
+					});
+				} else if (state.username.hasErrors) {
+					appDispatch({
+						type: 'flashMessageError',
+						value: state.username.message
+					});
+				} else submitData();
+				return () => {
+					cancelReq.cancel();
+				};
+			}
+		},
+		[ state.submitCount ]
+	);
 
 	return (
 		<form className="mb-0 pt-2 pt-md-0" onSubmit={handleSubmit}>
@@ -47,20 +130,36 @@ function HeaderLoggedOut(props) {
 				<div className="col-md mr-0 pr-md-0 mb-3 mb-md-0">
 					<input
 						name="username"
-						className="form-control form-control-sm input-dark"
+						className={`form-control form-control-sm input-dark ${state
+							.username.hasErrors && 'border-error'}
+							`}
 						type="text"
 						placeholder="Username"
 						autoComplete="off"
-						onChange={handleChange}
+						onChange={e => {
+							dispatch({
+								type: 'usernameImmediately',
+								value: e.target.value
+							});
+						}}
+						value={state.username.value}
 					/>
 				</div>
 				<div className="col-md mr-0 pr-md-0 mb-3 mb-md-0">
 					<input
 						name="password"
-						className="form-control form-control-sm input-dark"
+						className={`form-control form-control-sm input-dark ${state
+							.password.hasErrors && 'border-error'}
+							`}
 						type="password"
 						placeholder="Password"
-						onChange={handleChange}
+						onChange={e => {
+							dispatch({
+								type: 'passwordImmediately',
+								value: e.target.value
+							});
+						}}
+						value={state.password.value}
 					/>
 				</div>
 				<div className="col-md-auto">
