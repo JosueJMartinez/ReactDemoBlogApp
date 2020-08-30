@@ -18,16 +18,20 @@ function HeaderLoggedOut(props) {
 			hasErrors: false,
 			message: ''
 		},
-		submitCount: 0
+		submitCount: 0,
+		killError: false,
+		killErrorMessage: ''
 	};
 
 	function loginReducer(draft, action) {
 		switch (action.type) {
 			case 'usernameImmediately':
+				draft.killError = false;
 				draft.username.hasErrors = false;
 				draft.username.value = action.value;
 				return;
 			case 'passwordImmediately':
+				draft.killError = false;
 				draft.password.hasErrors = false;
 				draft.password.value = action.value;
 				return;
@@ -42,10 +46,9 @@ function HeaderLoggedOut(props) {
 					draft.username.message = 'Only letters, numbers, or _';
 				}
 				return;
-			case 'setErrorsTrue':
-				draft.username.hasErrors = true;
-				draft.password.hasErrors = true;
-				draft.username.message = action.value;
+			case 'setKillError':
+				draft.killError = true;
+				draft.killErrorMessage = action.value;
 				return;
 			case 'passwordSubmit':
 				draft.password.value = action.value;
@@ -79,16 +82,16 @@ function HeaderLoggedOut(props) {
 							username: state.username.value,
 							password: state.password.value
 						});
-
+						console.log(res.data);
 						if (res.data) {
 							appDispatch({ type: 'login', userData: res.data });
 							appDispatch({
 								type: 'flashMessage',
-								value: `Welcome back ${appState.user.username}`
+								value: `Welcome back ${res.data.username}`
 							});
 						} else {
 							dispatch({
-								type: 'setErrorsTrue',
+								type: 'setKillError',
 								value: 'Invalid username or password'
 							});
 							appDispatch({
@@ -100,14 +103,10 @@ function HeaderLoggedOut(props) {
 						console.log(e);
 					}
 				};
-				if (
-					state.password.hasErrors &&
-					state.username.hasErrors &&
-					state.username.message === 'Invalid username or password'
-				)
+				if (state.setKillError)
 					appDispatch({
 						type: 'flashMessageError',
-						value: `${state.username.message} `
+						value: `${state.message} `
 					});
 				else if (state.password.hasErrors && state.username.hasErrors)
 					appDispatch({
@@ -140,8 +139,10 @@ function HeaderLoggedOut(props) {
 				<div className="col-md mr-0 pr-md-0 mb-3 mb-md-0">
 					<input
 						name="username"
-						className={`form-control form-control-sm input-dark ${state
-							.username.hasErrors && 'border-error'}
+						className={`form-control form-control-sm input-dark ${(state
+							.username.hasErrors ||
+							state.killError) &&
+							'border-error'}
 							`}
 						type="text"
 						placeholder="Username"
@@ -158,8 +159,10 @@ function HeaderLoggedOut(props) {
 				<div className="col-md mr-0 pr-md-0 mb-3 mb-md-0">
 					<input
 						name="password"
-						className={`form-control form-control-sm input-dark ${state
-							.password.hasErrors && 'border-error'}
+						className={`form-control form-control-sm input-dark ${(state
+							.password.hasErrors ||
+							state.killError) &&
+							'border-error'}
 							`}
 						type="password"
 						placeholder="Password"
