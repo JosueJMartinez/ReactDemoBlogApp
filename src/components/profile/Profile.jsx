@@ -47,10 +47,12 @@ function UserProfile() {
 						setProfileState(draft => {
 							draft.isPageFound = false;
 						});
+					} else {
+						setProfileState(draft => {
+							draft.isPageFound = true;
+							draft.profileData = res.data;
+						});
 					}
-					setProfileState(draft => {
-						draft.profileData = res.data;
-					});
 				} catch (e) {
 					console.log('problem gettign profile or req was cancelled');
 				}
