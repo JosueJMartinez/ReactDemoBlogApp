@@ -51,10 +51,10 @@ function EditPost(props) {
 				draft.body.value = action.value.body;
 				draft.author.avatar = action.value.author.avatar;
 				draft.author.username = action.value.author.username;
+				draft.isFetching = false;
 				if (action.value.author.username === appState.user.username) {
 					draft.isVisitorOwner = true;
 				}
-				draft.isFetching = false;
 				return;
 			case 'titleChange':
 				draft.title.value = action.value;
@@ -104,6 +104,13 @@ function EditPost(props) {
 				});
 				if (resp.data) {
 					dispatch({ type: 'fetchComplete', value: resp.data });
+					if (resp.data.author.username !== appState.user.username) {
+						appDispatch({
+							type: 'flashMessageError',
+							value: 'You do not have permission to edit this post.'
+						});
+						props.history.push(`/`);
+					}
 				} else {
 					dispatch({ type: 'notFound' });
 				}
@@ -165,14 +172,6 @@ function EditPost(props) {
 
 	if (state.notFound) {
 		return <PageNotFound />;
-	}
-
-	if (!state.isVisitorOwner) {
-		appDispatch({
-			type: 'flashMessageError',
-			value: 'You do not have permission to edit this post.'
-		});
-		props.history.push(`/`);
 	}
 
 	return (
