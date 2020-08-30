@@ -45,6 +45,7 @@ function HeaderLoggedOut(props) {
 			case 'setErrorsTrue':
 				draft.username.hasErrors = true;
 				draft.password.hasErrors = true;
+				draft.username.message = action.value;
 				return;
 			case 'passwordSubmit':
 				draft.password.value = action.value;
@@ -65,8 +66,6 @@ function HeaderLoggedOut(props) {
 		e.preventDefault();
 		dispatch({ type: 'usernameSubmit', value: state.username.value });
 		dispatch({ type: 'passwordSubmit', value: state.password.value });
-		console.log(state);
-
 		dispatch({ type: 'submitLogin' });
 	};
 
@@ -88,7 +87,10 @@ function HeaderLoggedOut(props) {
 								value: `Welcome back ${appState.user.username}`
 							});
 						} else {
-							dispatch({ type: 'setErrorsTrue' });
+							dispatch({
+								type: 'setErrorsTrue',
+								value: 'Invalid username or password'
+							});
 							appDispatch({
 								type: 'flashMessageError',
 								value: 'Invalid username or password.'
@@ -98,8 +100,16 @@ function HeaderLoggedOut(props) {
 						console.log(e);
 					}
 				};
-
-				if (state.password.hasErrors && state.username.hasErrors)
+				if (
+					state.password.hasErrors &&
+					state.username.hasErrors &&
+					state.username.message === 'Invalid username or password'
+				)
+					appDispatch({
+						type: 'flashMessageError',
+						value: `${state.username.message} `
+					});
+				else if (state.password.hasErrors && state.username.hasErrors)
 					appDispatch({
 						type: 'flashMessageError',
 						value: `${state.username.message} and ${state.password
