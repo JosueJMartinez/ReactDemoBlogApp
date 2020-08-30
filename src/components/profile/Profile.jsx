@@ -26,13 +26,15 @@ function UserProfile() {
 				followerCount: 0,
 				followingCount: 0
 			},
-			isPageFound: true
+			isPageFound: true,
+			isLoading: true
 		}
 	});
 
 	// used for retrieving user information
 	useEffect(
 		() => {
+			console.log(profileState);
 			const userProfileReq = Axios.CancelToken.source();
 
 			const fetchData = async () => {
@@ -45,12 +47,14 @@ function UserProfile() {
 					console.log(res.data);
 					if (!res.data) {
 						setProfileState(draft => {
-							draft.isPageFound = false;
+							draft.profileData.isPageFound = false;
+							draft.profileData.isLoading = false;
 						});
 					} else {
 						setProfileState(draft => {
-							draft.isPageFound = true;
 							draft.profileData = res.data;
+							draft.profileData.isPageFound = true;
+							draft.profileData.isLoading = false;
 						});
 					}
 				} catch (e) {
@@ -155,7 +159,11 @@ function UserProfile() {
 		[ profileState.stopFollowingReqCount ]
 	);
 
-	if (!profileState.isPageFound) return <PageNotFound />;
+	if (
+		!profileState.profileData.isPageFound &&
+		!profileState.profileData.isLoading
+	)
+		return <PageNotFound />;
 
 	return (
 		<Page title={`Profile of ${profileState.profileData.profileUsername}`}>
